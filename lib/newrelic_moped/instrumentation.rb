@@ -37,7 +37,7 @@ module NewRelic
 
         command = Proc.new { logging_without_newrelic_trace(operations, &blk) }
         res = nil
-        
+
         if metric
           metrics = ["ActiveRecord/all", "ActiveRecord/#{collection}/#{metric}"]
 
@@ -50,6 +50,11 @@ module NewRelic
 
               NewRelic::Agent.instance.transaction_sampler.notice_sql(log_statement, nil, elapsed_time)
               NewRelic::Agent.instance.sql_sampler.notice_sql(log_statement, metric, nil, elapsed_time)
+
+              metrics = ["ActiveRecord/#{operation_name}", 'ActiveRecord/all']
+              metrics.each do |metric|
+                NewRelic::Agent.instance.stats_engine.get_stats_no_scope(metric).trace_call(elapsed_time)
+              end
             end
           end
         else
